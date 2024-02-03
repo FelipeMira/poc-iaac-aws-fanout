@@ -22,7 +22,7 @@ variable "kms_key_name" {
 # Define o nome do tópico SNS
 variable "sns_topic_name" {
   type        = string
-  default     = "sns-topic"
+  default     = "sns-receive"
   description = "Nome do tópico SNS para publicar as mensagens"
 }
 

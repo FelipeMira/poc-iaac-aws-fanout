@@ -15,12 +15,6 @@ provider "aws" {
   }
 }
 
-# Cria uma chave kms para criptografar as mensagens
-resource "aws_kms_key" "kms_key" {
-  description             = "Chave KMS para criptografar as mensagens do SNS e do SQS"
-  deletion_window_in_days = 10
-}
-
 # Cria um tópico SNS
 resource "aws_sns_topic" "sns_topic" {
   name              = local.sns-name
@@ -30,17 +24,17 @@ resource "aws_sns_topic" "sns_topic" {
 
 # Cria um tópico SQS
 resource "aws_sqs_queue" "sqs_queue" {
-  name                              = local.sqs-name
+  name                              = local.sqs-alerts-name
   kms_master_key_id                 = aws_kms_key.kms_key.arn
-  policy                            = data.aws_iam_policy_document.sqs-queue-policy.json
+  policy                            = data.aws_iam_policy_document.sqs-alerts-policy.json
   kms_data_key_reuse_period_seconds = 300
 }
 
 # Cria um tópico SQS para Erro
 resource "aws_sqs_queue" "sqs_queue_error" {
-  name                              = "${local.sqs-name}-error"
+  name                              = local.sqs-errors-name
   kms_master_key_id                 = aws_kms_key.kms_key.arn
-  policy                            = data.aws_iam_policy_document.sqs-queue-policy.json
+  policy                            = data.aws_iam_policy_document.sqs-errors-policy.json
   kms_data_key_reuse_period_seconds = 300
 }
 

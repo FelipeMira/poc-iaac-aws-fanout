@@ -12,7 +12,8 @@ data "aws_iam_policy_document" "sns-topic-policy" {
 
       # Para evitar dependências circulares, devemos criar o ARN nós mesmos
       values = [
-        "arn:aws:sqs:${var.region}:${data.aws_caller_identity.current.account_id}:${local.sqs-name}",
+        "arn:aws:sqs:${var.region}:${data.aws_caller_identity.current.account_id}:${local.sqs-errors-name}",
+        "arn:aws:sqs:${var.region}:${data.aws_caller_identity.current.account_id}:${local.sqs-alerts-name}",
       ]
     }
 
@@ -32,8 +33,8 @@ data "aws_iam_policy_document" "sns-topic-policy" {
 }
 
 # Criar uma política para a fila SQS. Isso permitirá que o tópico SNS possa publicar mensagens na fila SQS
-data "aws_iam_policy_document" "sqs-queue-policy" {
-  policy_id = "arn:aws:sqs:${var.region}:${data.aws_caller_identity.current.account_id}:${local.sqs-name}/SQSDefaultPolicy"
+data "aws_iam_policy_document" "sqs-alerts-policy" {
+  policy_id = "arn:aws:sqs:${var.region}:${data.aws_caller_identity.current.account_id}:${local.sqs-alerts-name}/SQSDefaultPolicy"
 
   statement {
     sid = "example-sns-topic"
@@ -50,7 +51,40 @@ data "aws_iam_policy_document" "sqs-queue-policy" {
     ]
 
     resources = [
-      "arn:aws:sqs:${var.region}:${data.aws_caller_identity.current.account_id}:${local.sqs-name}"
+      "arn:aws:sqs:${var.region}:${data.aws_caller_identity.current.account_id}:${local.sqs-alerts-name}"
+    ]
+
+    condition {
+      test     = "ArnEquals"
+      variable = "aws:SourceArn"
+
+      values = [
+        "arn:aws:sns:${var.region}:${data.aws_caller_identity.current.account_id}:${local.sns-name}"
+      ]
+    }
+  }
+}
+
+# Criar uma política para a fila SQS. Isso permitirá que o tópico SNS possa publicar mensagens na fila SQS
+data "aws_iam_policy_document" "sqs-errors-policy" {
+  policy_id = "arn:aws:sqs:${var.region}:${data.aws_caller_identity.current.account_id}:${local.sqs-errors-name}/SQSDefaultPolicy"
+
+  statement {
+    sid = "example-sns-topic"
+
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
+    actions = [
+      "SQS:SendMessage",
+    ]
+
+    resources = [
+      "arn:aws:sqs:${var.region}:${data.aws_caller_identity.current.account_id}:${local.sqs-errors-name}"
     ]
 
     condition {
