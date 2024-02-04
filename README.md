@@ -108,11 +108,7 @@ aws sns publish \
 
 #### Executando o projeto
 
-- Devemos ir até a pasta do projeto: 
+- Devemos executar o comando: 
 ```shell
-cd ms-consumer-sqs
-``` 
-- executar o comando:
-```shell
-./gradlew :configuration:bootRun --args='--spring.profiles.active=local'
+cd ms-consumer-sqs && ./gradlew :configuration:bootRun --args='--spring.profiles.active=local'
 ```
