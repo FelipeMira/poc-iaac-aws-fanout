@@ -1,3 +1,3 @@
-aws sns publish --topic-arn "arn:aws:sns:sa-east-1:000000000000:app-sns-env-dev" --message="Mensagem de teste" --message-attributes '{"tipo":{"DataType":"String","StringValue":"alerta"}}' --endpoint-url=http://localhost:4566 --profile=localstack
+aws sns publish --topic-arn "arn:aws:sns:sa-east-1:000000000000:sns-receive-env-dev" --message '{"default": "Mensagem de teste"}' --message-structure json --message-attributes '{"tipo":{"DataType":"String","StringValue":"alerta"}, "queueUrl":{"DataType":"String","StringValue":"alerts"}}' --endpoint-url=http://localhost:4566 --profile=localstack
 
 aws sns publish --topic-arn "arn:aws:sns:sa-east-1:000000000000:app-sns-env-dev" --message="Mensagem de erro" --message-attributes '{"tipo":{"DataType":"String","StringValue":"erro"}}' --endpoint-url=http://localhost:4566 --profile=localstack

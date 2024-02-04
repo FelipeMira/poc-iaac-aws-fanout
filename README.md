@@ -101,3 +101,18 @@ aws sns publish \
  --profile=localstack
 ```
 
+## Projeto consumidor da fila SQS
+
+- Foi criado um projeto que consome da fila sqs e envia a mensagem para outra fila.
+- Os parâmetros de adaptador de saída são fakes e não enviam a mensagem para lugar algum, apenas imprime no console o ato realizado.
+
+#### Executando o projeto
+
+- Devemos ir até a pasta do projeto: 
+```shell
+cd ms-consumer-sqs
+``` 
+- executar o comando:
+```shell
+./gradlew :configuration:bootRun --args='--spring.profiles.active=local'
+```

@@ -44,6 +44,7 @@ resource "aws_sns_topic_subscription" "sqs_sub" {
   topic_arn = aws_sns_topic.sns_topic.arn
   protocol  = "sqs"
   endpoint  = aws_sqs_queue.sqs_queue.arn
+  raw_message_delivery = true
 
   filter_policy = <<EOF
 {
@@ -57,6 +58,7 @@ resource "aws_sns_topic_subscription" "sqs_sub_error" {
   topic_arn = aws_sns_topic.sns_topic.arn
   protocol  = "sqs"
   endpoint  = aws_sqs_queue.sqs_queue_error.arn
+  raw_message_delivery = true
 
   filter_policy = <<EOF
 {

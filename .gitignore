@@ -2,3 +2,7 @@
 /infra/terraform.tfstate.backup
 /infra/.terraform/
 /.idea/
+*/build/
+*/.gradle
+**/build/
+/ms-consumer-sqs.iml
