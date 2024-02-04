@@ -28,6 +28,20 @@ resource "aws_sqs_queue" "sqs_queue" {
   kms_master_key_id                 = aws_kms_key.kms_key.arn
   policy                            = data.aws_iam_policy_document.sqs-alerts-policy.json
   kms_data_key_reuse_period_seconds = 300
+  redrive_policy                    = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.sqs_alerts_dlq.arn
+    maxReceiveCount     = 5
+  })
+}
+
+# Cria uma fila DLQ para o serviço de alertas
+resource "aws_sqs_queue" "sqs_alerts_dlq" {
+  name = "${local.sqs-alerts-name}-dlq"
+
+  # 15 minutos
+  visibility_timeout_seconds = 900
+  # 14 dias
+  message_retention_seconds = 1209600
 }
 
 # Cria um tópico SQS para Erro
@@ -36,8 +50,21 @@ resource "aws_sqs_queue" "sqs_queue_error" {
   kms_master_key_id                 = aws_kms_key.kms_key.arn
   policy                            = data.aws_iam_policy_document.sqs-errors-policy.json
   kms_data_key_reuse_period_seconds = 300
+  redrive_policy                    = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.sqs_errors_dlq.arn
+    maxReceiveCount     = 5
+  })
 }
 
+# Cria uma fila DLQ para o serviço de erros
+resource "aws_sqs_queue" "sqs_errors_dlq" {
+  name = "${local.sqs-errors-name}-dlq"
+
+  # 15 minutos
+  visibility_timeout_seconds = 900
+  # 14 dias
+  message_retention_seconds = 1209600
+}
 
 # Inscreve o tópico SQS no tópico SNS com um filtro
 resource "aws_sns_topic_subscription" "sqs_sub" {
