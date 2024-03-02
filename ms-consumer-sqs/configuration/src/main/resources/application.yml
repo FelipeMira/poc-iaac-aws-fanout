@@ -2,3 +2,20 @@ spring:
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+
+aws:
+  sqs:
+    in:
+      queues:
+        receive:
+          name: "sqs-receive-env-dev"
+    out:
+      queues:
+        alert:
+          name: "sqs-alerts-env-dev"
+          x-type: "alert"
+          url: "http://localhost:4566/000000000000/${aws.sqs.out.queues.alert.name}"
+        error:
+          name: "sqs-errors-env-dev"
+          x-type: "error"
+          url: "http://localhost:4566/000000000000/${aws.sqs.out.queues.error.name}"

@@ -3,77 +3,80 @@ package br.com.felipemira.domain.service;
 import br.com.felipemira.domain.model.Message;
 import br.com.felipemira.exceptions.BusinessException;
 import br.com.felipemira.exceptions.Errors;
-import br.com.felipemira.ports.out.QueueData;
 import br.com.felipemira.ports.out.SendMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 public class ProcessMessageServiceTest {
 
     @Mock
-    private QueueData queueData;
-    @Mock
     private SendMessage sendMessage;
 
+    private List<SendMessage> sendMessageList;
+
+    @Autowired
     private ProcessMessageService processMessageService;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        processMessageService = new ProcessMessageService(queueData, sendMessage);
+        sendMessageList = Collections.singletonList(sendMessage);
+        processMessageService = new ProcessMessageService(sendMessageList);
     }
 
-
     @Test
-    public void processMessageWithValidMessageCallsQueueDataAndSendMessage() {
+    public void processMessageWithAllAttributesSendsMessage() {
         Message message = new Message();
-        message.setMessageAttributes(Collections.singletonMap("queueUrl", "http://localhost:4566/000000000000/test-queue"));
+        message.setMessageAttributes(Collections.singletonMap("x-type", "alert"));
         message.setText("text");
+
+        when(sendMessage.isCorrectQueue("alert")).thenReturn(true);
+
+        doNothing().when(sendMessage).sendMessage(any(Message.class));
 
         processMessageService.processMessage(message);
 
-        verify(queueData).getQueueUrl(message.getQueueUrl());
         verify(sendMessage).sendMessage(message);
     }
 
     @Test
-    public void processMessageWithValidMessageCallsSendMessage() {
-        Message message = new Message();
-        message.setMessageAttributes(Collections.singletonMap("key", "value"));
-        message.setText("text");
-
-        Exception exception = assertThrows(BusinessException.class, () -> processMessageService.processMessage(message));
-
-        assertEquals(Errors.ERROR_MESSAGE_WITHOUT_ATTRIBUTE_QUEUE_URL, exception.getMessage());
-    }
-
-    @Test
-    public void processMessageWithEmptyAttributesThrowsBusinessException() {
+    public void processMessageWithoutAttributesThrowsException() {
         Message message = new Message();
         message.setMessageAttributes(Collections.emptyMap());
         message.setText("text");
 
-        Exception exception = assertThrows(BusinessException.class, () -> processMessageService.processMessage(message));
-
-        assertEquals(Errors.ERROR_MESSAGE_WITHOUT_ATTRIBUTES, exception.getMessage());
+        assertThrows(BusinessException.class, () -> processMessageService.processMessage(message), Errors.ERROR_MESSAGE_WITHOUT_ATTRIBUTES);
     }
 
     @Test
-    public void processMessageWithEmptyTextThrowsBusinessException() {
+    public void processMessageWithoutTextThrowsException() {
         Message message = new Message();
-        message.setMessageAttributes(Collections.singletonMap("queueUrl", "http://localhost:4566/000000000000/test-queue"));
+        message.setMessageAttributes(Collections.singletonMap("x-type", "alert"));
         message.setText("");
 
-        Exception exception = assertThrows(BusinessException.class, () -> processMessageService.processMessage(message));
+        assertThrows(BusinessException.class, () -> processMessageService.processMessage(message), Errors.ERROR_MESSAGE_WITHOUT_TEXT);
+    }
 
-        assertEquals(Errors.ERROR_MESSAGE_WITHOUT_TEXT, exception.getMessage());
+    @Test
+    public void processMessageWithoutXTypeThrowsException() {
+        Message message = new Message();
+        message.setMessageAttributes(Collections.singletonMap("key", "value"));
+        message.setText("text");
+
+        assertThrows(BusinessException.class, () -> processMessageService.processMessage(message), Errors.ERROR_X_TIPO_NOT_FOUND);
     }
 }
