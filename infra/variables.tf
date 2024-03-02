@@ -36,13 +36,6 @@ variable "sqs_queue_name" {
 # Define o nome do filtro para a inscrição do SQS no SNS
 variable "filter_name" {
   type        = string
-  default     = "tipo"
+  default     = "x-type"
   description = "Nome do atributo da mensagem que será usado como filtro"
-}
-
-# Define o valor do filtro para a inscrição do SQS no SNS
-variable "filter_value" {
-  type        = string
-  default     = "alerta"
-  description = "Valor do atributo da mensagem que será usado como filtro"
 }

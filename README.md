@@ -46,7 +46,7 @@ docker-compose up
 
 - Devemos ir até a pasta de infraestrutura e executar o comando:
 ```shell
-cd ./infra && terraform init && terraform plan && terraform apply -auto-approve
+terraform -chdir=./infra init && terraform -chdir=./infra plan && terraform -chdir=./infra apply -auto-approve
 ```
 
 ---
@@ -82,12 +82,12 @@ output = json
 #### Mensagem para fila de alerta
 
 ```shell
-aws sns publish \
- --topic-arn "arn:aws:sns:sa-east-1:000000000000:sns-receive-env-dev" \
- --message="Mensagem de teste" \
- --message-attributes '{"tipo":{"DataType":"String","StringValue":"alerta"}}' \
- --endpoint-url=http://localhost:4566 \
- --profile=localstack
+aws sns publish --topic-arn "arn:aws:sns:sa-east-1:000000000000:sns-receive-env-dev" \
+--message '{"default": "Mensagem de teste"}' \
+--message-structure json \
+--message-attributes '{"x-type":{"DataType":"String","StringValue":"alert"}, "x-queueUrl":{"DataType":"String","StringValue":"alert"}}' \
+--endpoint-url=http://localhost:4566 \
+--profile=localstack
 ```
 
 #### Mensagem para fila de erro
@@ -96,7 +96,7 @@ aws sns publish \
 aws sns publish \
  --topic-arn "arn:aws:sns:sa-east-1:000000000000:sns-receive-env-dev" \
  --message="Mensagem de teste" \
- --message-attributes '{"tipo":{"DataType":"String","StringValue":"erro"}}' \
+ --message-attributes '{"x-type":{"DataType":"String","StringValue":"error"}, "x-queueUrl":{"DataType":"String","StringValue":"error"}}' \
  --endpoint-url=http://localhost:4566 \
  --profile=localstack
 ```
@@ -104,11 +104,37 @@ aws sns publish \
 ## Projeto consumidor da fila SQS
 
 - Foi criado um projeto que consome da fila sqs e envia a mensagem para outra fila.
-- Os parâmetros de adaptador de saída são fakes e não enviam a mensagem para lugar algum, apenas imprime no console o ato realizado.
+- Vamos enviar uma mensagem na fila `sqs-receive-env-dev` recepcionar no fluxo de entrada e enviar para a fila `sqs-alerts-env-dev`.
+- Após o primeiro teste vamos enviar uma mensagem na fila `sqs-receive-env-dev` recepcionar no fluxo de entrada e enviar para a fila `sqs-error-env-dev`.
+- Para direcionar para a fila correta utilizamos o padrão Strategy. No padrão Strategy, um comportamento ou algoritmo 
+é encapsulado em uma classe, e a classe cliente pode escolher o algoritmo apropriado em tempo de execução. 
+No nosso caso, a interface SendMessage define um comportamento comum (enviar uma mensagem), e as classes SQSOutputAlert 
+e SQSOutputError implementam esse comportamento de maneiras diferentes. A classe ProcessMessageService pode então 
+escolher qual estratégia usar com base no tipo de mensagem.
 
 #### Executando o projeto
 
 - Devemos executar o comando: 
 ```shell
 cd ms-consumer-sqs && ./gradlew :configuration:bootRun --args='--spring.profiles.active=local'
+```
+
+#### Mensagem para fila de recebimento e enviando para a fila de alerta
+
+```shell
+aws sqs send-message --queue-url "http://localhost:4566/000000000000/sqs-receive-env-dev" \
+--message-body '{"default": "Mensagem de teste"}' \
+--message-attributes '{"x-type":{"DataType":"String","StringValue":"alert"}, "x-queueUrl":{"DataType":"String","StringValue":"alert"}}' \
+--endpoint-url=http://localhost:4566 \
+--profile=localstack
+```
+
+#### Mensagem para fila de recebimento e enviando para a fila de erros
+
+```shell
+aws sqs send-message --queue-url "http://localhost:4566/000000000000/sqs-receive-env-dev" \
+--message-body '{"default": "Mensagem de teste"}' \
+--message-attributes '{"x-type":{"DataType":"String","StringValue":"error"}, "x-queueUrl":{"DataType":"String","StringValue":"error"}}' \
+--endpoint-url=http://localhost:4566 \
+--profile=localstack
 ```

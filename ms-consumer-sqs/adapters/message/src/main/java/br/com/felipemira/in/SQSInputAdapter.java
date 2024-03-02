@@ -1,11 +1,11 @@
 package br.com.felipemira.in;
 
-import br.com.felipemira.in.mappers.MessageMapper;
+import br.com.felipemira.in.mappers.MessageInMapper;
 import br.com.felipemira.ports.in.ProcessMessageUseCase;
 
 import io.awspring.cloud.sqs.annotation.SqsListener;
-import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement;
 import br.com.felipemira.domain.model.Message;
+import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement;
 import org.springframework.messaging.handler.annotation.Headers;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
@@ -16,22 +16,25 @@ import java.util.Map;
 @Service
 public class SQSInputAdapter {
     private final ProcessMessageUseCase processMessage;
-    private final MessageMapper messageMapper;
+    private final MessageInMapper messageInMapper;
 
-    public SQSInputAdapter(ProcessMessageUseCase processMessage, MessageMapper messageMapper) {
+    public SQSInputAdapter(ProcessMessageUseCase processMessage, MessageInMapper messageInMapper) {
         this.processMessage = processMessage;
-        this.messageMapper = messageMapper;
+        this.messageInMapper = messageInMapper;
     }
 
-    @SqsListener(value = "sqs-alerts-env-dev")
-    public void listenToSqsQueue(@Payload org.springframework.messaging.Message<?> message, @Headers Map<String, Object> headers) {
+    @SqsListener(value = "${aws.sqs.in.queues.receive.name}")
+    public void listenToSqsQueue(@Payload org.springframework.messaging.Message<?> message, @Headers Map<String, Object> headers, Acknowledgement acknowledgement) {
         System.out.println("Mensagem recebida: " + message.getPayload());
 
-        Message domainMessage = messageMapper.awsToDomain(message, headers);
+        Message domainMessage = messageInMapper.awsToDomain(message, headers);
 
-        processMessage.processMessage(domainMessage);
-
-        Acknowledgement.acknowledge(message);
+        try {
+            processMessage.processMessage(domainMessage);
+            acknowledgement.acknowledge();
+        } catch (Exception e) {
+            System.out.println("Erro ao processar a mensagem: " + e.getMessage());
+        }
     }
 }
 

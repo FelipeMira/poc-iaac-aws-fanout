@@ -23,7 +23,29 @@ resource "aws_sns_topic" "sns_topic" {
 }
 
 # Cria um tópico SQS
-resource "aws_sqs_queue" "sqs_queue" {
+resource "aws_sqs_queue" "sqs_receiver" {
+  name                              = local.sqs-receive-name
+  kms_master_key_id                 = aws_kms_key.kms_key.arn
+  policy                            = data.aws_iam_policy_document.sqs-receiver-policy.json
+  kms_data_key_reuse_period_seconds = 300
+  redrive_policy                    = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.sqs_receiver_dlq.arn
+    maxReceiveCount     = 5
+  })
+}
+
+# Cria uma fila DLQ para o serviço de alertas
+resource "aws_sqs_queue" "sqs_receiver_dlq" {
+  name = "${local.sqs-receive-name}-dlq"
+
+  # 15 minutos
+  visibility_timeout_seconds = 900
+  # 14 dias
+  message_retention_seconds = 1209600
+}
+
+# Cria um tópico SQS
+resource "aws_sqs_queue" "sqs_alerts" {
   name                              = local.sqs-alerts-name
   kms_master_key_id                 = aws_kms_key.kms_key.arn
   policy                            = data.aws_iam_policy_document.sqs-alerts-policy.json
@@ -45,7 +67,7 @@ resource "aws_sqs_queue" "sqs_alerts_dlq" {
 }
 
 # Cria um tópico SQS para Erro
-resource "aws_sqs_queue" "sqs_queue_error" {
+resource "aws_sqs_queue" "sqs_errors" {
   name                              = local.sqs-errors-name
   kms_master_key_id                 = aws_kms_key.kms_key.arn
   policy                            = data.aws_iam_policy_document.sqs-errors-policy.json
@@ -70,12 +92,12 @@ resource "aws_sqs_queue" "sqs_errors_dlq" {
 resource "aws_sns_topic_subscription" "sqs_sub" {
   topic_arn = aws_sns_topic.sns_topic.arn
   protocol  = "sqs"
-  endpoint  = aws_sqs_queue.sqs_queue.arn
+  endpoint  = aws_sqs_queue.sqs_alerts.arn
   raw_message_delivery = true
 
   filter_policy = <<EOF
 {
-  "${var.filter_name}": ["${var.filter_value}"]
+  "${var.filter_name}": ["alert"]
 }
 EOF
 }
@@ -84,12 +106,12 @@ EOF
 resource "aws_sns_topic_subscription" "sqs_sub_error" {
   topic_arn = aws_sns_topic.sns_topic.arn
   protocol  = "sqs"
-  endpoint  = aws_sqs_queue.sqs_queue_error.arn
+  endpoint  = aws_sqs_queue.sqs_errors.arn
   raw_message_delivery = true
 
   filter_policy = <<EOF
 {
-  "${var.filter_name}": ["erro"]
+  "${var.filter_name}": ["error"]
 }
 EOF
 }
