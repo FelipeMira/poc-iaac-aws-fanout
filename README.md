@@ -36,9 +36,28 @@ Utilizando a arquitetura fanout:
 ```shell
 "C:\PROGRA~1\Docker\Docker\Docker Desktop.exe"
 ``` 
+
+#### Localstack padrão:
 - Execute o comando:
 ```shell
 docker-compose up
+``` 
+- Se tudo ocorreu bem seu ambiente está configurado.
+
+#### Localstack PRO:
+
+- O localstack permite que utilizemos a versão PRO com a licença `Hobby Subscription`, destinada a uso não comercial, 
+sem a necessidade de informação do cartão de crédito.
+- Com a licença e o token em mãos, podemos configurar o localstack pro.
+- Devemos criar um arquivo .env em `~/../Public/dev/Docker/localstack/.env` com o seguinte conteúdo:
+
+```text
+LOCALSTACK_AUTH_TOKEN=<Seu token para o localstack PRO>
+```
+
+- Execute o comando:
+```shell
+cd localstack-pro && docker-compose up
 ``` 
 - Se tudo ocorreu bem seu ambiente está configurado.
 

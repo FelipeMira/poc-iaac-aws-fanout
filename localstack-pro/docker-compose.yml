@@ -5,8 +5,10 @@ name: IaC-fanout
 services:
 
   localstack:
-    image: localstack/localstack:latest
-    container_name: localstack
+    image: localstack/localstack-pro:latest
+    container_name: localstack-pro
+    env_file:
+      - ~/../Public/dev/Docker/localstack/.env
     environment:
       - AWS_DEFAULT_REGION=sa-east-1
       - AWS_ACCESS_KEY_ID=teste

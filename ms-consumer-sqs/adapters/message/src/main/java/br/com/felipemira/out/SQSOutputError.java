@@ -1,6 +1,5 @@
 package br.com.felipemira.out;
 
-import br.com.felipemira.domain.model.Message;
 import br.com.felipemira.out.base.BaseQueue;
 import br.com.felipemira.out.mappers.MessageOutMapper;
 import org.springframework.beans.factory.annotation.Autowired;
