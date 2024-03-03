@@ -34,8 +34,8 @@ public class SqsConfig {
 
     @Bean
     @Primary
-    @Profile("dev")
-    public SqsAsyncClient amazonSQSDev() {
+    @Profile("!local")
+    public SqsAsyncClient amazonSQS() {
         return SqsAsyncClient.builder().region(Region.of("sa-east-1")).build();
     }
 
